@@ -1,138 +1,101 @@
 import { useState, useEffect } from 'react';
-import Head from 'next/head';
 
-type Todo = {
+interface Todo {
   id: number;
   task: string;
-  createdAt: string;
-};
+  created_at: string;
+}
 
 export default function Home() {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [newTask, setNewTask] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     fetchTodos();
   }, []);
 
   const fetchTodos = async () => {
-    try {
-      const response = await fetch('/api/todos');
-      const data = await response.json();
-      setTodos(data);
-    } catch (error) {
-      console.error('Failed to fetch todos:', error);
-    }
+    const response = await fetch('/api/todos');
+    const data = await response.json();
+    setTodos(data);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const addTodo = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTask.trim()) return;
 
-    setIsLoading(true);
-    try {
-      const response = await fetch('/api/todos', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ task: newTask }),
-      });
+    const response = await fetch('/api/todos', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ task: newTask }),
+    });
 
-      if (response.ok) {
-        const todo = await response.json();
-        setTodos(prev => [todo, ...prev]);
-        setNewTask('');
-      }
-    } catch (error) {
-      console.error('Failed to add todo:', error);
-    } finally {
-      setIsLoading(false);
+    if (response.ok) {
+      setNewTask('');
+      fetchTodos();
     }
   };
 
-  const handleDelete = async (id: number) => {
-    try {
-      const response = await fetch(`/api/todos/${id}`, {
-        method: 'DELETE',
-      });
+  const deleteTodo = async (id: number) => {
+    const response = await fetch(`/api/todos/${id}`, {
+      method: 'DELETE',
+    });
 
-      if (response.ok) {
-        setTodos(prev => prev.filter(todo => todo.id !== id));
-      }
-    } catch (error) {
-      console.error('Failed to delete todo:', error);
+    if (response.ok) {
+      fetchTodos();
     }
   };
 
   return (
-    <>
-      <Head>
-        <title>Todo App - Next.js</title>
-        <meta name="description" content="Simple Todo application" />
-      </Head>
-      <main className="min-h-screen bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500">
-        <div className="container mx-auto px-4 py-12 max-w-3xl">
-          <div className="bg-white/10 backdrop-blur-lg rounded-2xl shadow-2xl p-8">
-            <h1 className="text-5xl font-bold text-center mb-12 text-white tracking-tight">
-              Todo List
-              <span className="block text-lg font-normal mt-2 text-purple-200">
-                タスクを管理しましょう
-              </span>
-            </h1>
-          
-            <form onSubmit={handleSubmit} className="mb-12">
-              <div className="flex gap-3">
-                <input
-                  type="text"
-                  value={newTask}
-                  onChange={(e) => setNewTask(e.target.value)}
-                  placeholder="新しいタスクを入力..."
-                  className="flex-1 px-6 py-4 rounded-xl border-0 shadow-lg focus:outline-none focus:ring-2 focus:ring-purple-300 bg-white/95 backdrop-blur-sm text-gray-700 placeholder-gray-400"
-                />
-                <button
-                  type="submit"
-                  disabled={isLoading}
-                  className="px-8 py-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl shadow-lg hover:from-purple-600 hover:to-pink-600 disabled:opacity-50 transition-all duration-200 font-medium transform hover:scale-105 active:scale-95"
-                >
-                  {isLoading ? '追加中...' : '追加'}
-                </button>
-              </div>
-            </form>
-
-            <div className="space-y-4">
-              {todos.map((todo) => (
-                <div
-                  key={todo.id}
-                  className="bg-white/90 backdrop-blur-sm p-6 rounded-xl shadow-lg flex justify-between items-center hover:bg-white/95 transition-all duration-200 group transform hover:-translate-y-1"
-                >
-                  <span className="text-gray-800 font-medium flex-1 mr-4">
-                    {todo.task}
-                    <span className="block text-xs text-gray-500 mt-1">
-                      {new Date(todo.createdAt).toLocaleString('ja-JP')}
-                    </span>
-                  </span>
+    <div className="min-h-screen bg-gradient-to-br from-purple-500 via-pink-500 to-orange-400 py-6 flex flex-col justify-center sm:py-12">
+      <div className="relative py-3 sm:max-w-xl sm:mx-auto">
+        <div className="relative px-4 py-10 bg-white/80 backdrop-blur-lg shadow-2xl sm:rounded-3xl sm:p-20 border border-white/20">
+          <div className="max-w-md mx-auto">
+            <div className="divide-y divide-gray-200/50">
+              <div className="py-8 text-base leading-6 space-y-4 text-gray-700 sm:text-lg sm:leading-7">
+                <h1 className="text-3xl font-bold mb-8 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                  ToDoリスト
+                </h1>
+                
+                <form onSubmit={addTodo} className="flex gap-2 mb-8">
+                  <input
+                    type="text"
+                    value={newTask}
+                    onChange={(e) => setNewTask(e.target.value)}
+                    className="flex-1 px-4 py-2 border rounded-lg bg-white/50 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    placeholder="新しいタスクを入力"
+                  />
                   <button
-                    onClick={() => handleDelete(todo.id)}
-                    className="px-5 py-2.5 text-sm bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-200 hover:from-red-600 hover:to-pink-600 transform hover:scale-105 active:scale-95"
+                    type="submit"
+                    className="px-6 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:opacity-90 transition-all duration-200 shadow-lg hover:shadow-xl"
                   >
-                    削除
+                    追加
                   </button>
-                </div>
-              ))}
-              {todos.length === 0 && (
-                <div className="text-center py-12">
-                  <div className="text-white/80 bg-white/10 backdrop-blur-sm rounded-xl p-8">
-                    <p className="text-xl mb-2">タスクがありません</p>
-                    <p className="text-sm text-purple-200">
-                      新しいタスクを追加してください
-                    </p>
-                  </div>
-                </div>
-              )}
+                </form>
+
+                <ul className="space-y-4">
+                  {todos.map((todo) => (
+                    <li
+                      key={todo.id}
+                      className="flex items-center justify-between bg-white/40 backdrop-blur-sm p-4 rounded-lg border border-white/20 hover:bg-white/50 transition-all duration-200"
+                    >
+                      <span className="text-gray-800">{todo.task}</span>
+                      <button
+                        onClick={() => deleteTodo(todo.id)}
+                        className="px-4 py-1.5 bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-lg hover:opacity-90 transition-all duration-200 shadow-md hover:shadow-lg"
+                      >
+                        削除
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
           </div>
         </div>
-      </main>
-    </>
+      </div>
+    </div>
   );
 } 
